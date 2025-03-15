@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/origin"
+        android:title="@string/origin" />
+    <item
+        android:id="@+id/time"
+        android:title="@string/space_time" />
+    <item
+        android:id="@+id/deep"
+        android:title="@string/deep" />
+</menu>

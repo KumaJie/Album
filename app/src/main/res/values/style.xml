@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ToolBar菜单样式.-->
+    <style name="popup_theme" parent="@style/ThemeOverlay.AppCompat.Light">
+        <!--设置不覆盖锚点-->
+        <item name="overlapAnchor">false</item>
+    </style>
+
+    <style name="item_4_image">
+        <item name="android:scaleType">centerCrop</item>
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+<!--        <item name="android:layout_weight">1</item>-->
+        <item name="android:visibility">invisible</item>
+    </style>
+
+</resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+<!--    占位 -->
+    <hust.album.view.SquareImageView
+        android:id="@+id/item_4_image1"
+        style="@style/item_4_image" />
+
+    <hust.album.view.SquareImageView
+        android:id="@+id/item_4_image2"
+        android:layout_marginLeft="1dp"
+        style="@style/item_4_image" />
+
+    <hust.album.view.SquareImageView
+        android:id="@+id/item_4_image3"
+        android:layout_marginLeft="1dp"
+        android:layout_marginRight="1dp"
+        style="@style/item_4_image" />
+
+    <hust.album.view.SquareImageView
+        android:id="@+id/item_4_image4"
+        style="@style/item_4_image" />
+</LinearLayout>
