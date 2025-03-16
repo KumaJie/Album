@@ -2,13 +2,17 @@ package hust.album;
 
 import android.os.Bundle;
 import android.util.TypedValue;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.viewpager2.widget.ViewPager2;
 
+import java.util.ArrayList;
 import java.util.List;
 
+
+import hust.album.view.Global;
 import hust.album.adapter.ImageAdapter;
 import hust.album.adapter.ViewPagerItemDecoration;
 import hust.album.entity.Image;
@@ -18,6 +22,7 @@ public class FullImageActivity extends AppCompatActivity {
     private List<Image> images;
     private int pos;
 
+    private TextView tv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,10 +34,18 @@ public class FullImageActivity extends AppCompatActivity {
             finish();
         });
 
+        tv = findViewById(R.id.detail);
+
         ViewPager2 viewPager = findViewById(R.id.view_pager);
 
         pos = getIntent().getIntExtra("position", 0);
-        images = (List<Image>)getIntent().getSerializableExtra("images");
+        List<Integer> mask = (List<Integer>) getIntent().getSerializableExtra("images");
+
+        images = new ArrayList<>();
+
+        for (int m : mask) {
+            images.add(Global.getInstance().getImagesByPos(m));
+        }
 
         tb.setTitle(images.get(pos).getName());
 
@@ -52,6 +65,9 @@ public class FullImageActivity extends AppCompatActivity {
                 pos = position;
                 tb.setTitle(images.get(position).getName());
                 tb.setSubtitle(images.get(position).getDate("yyyy-MM-dd HH:mm:ss"));
+
+                tv.setText(images.get(position).toString());
+
             }
 
             @Override

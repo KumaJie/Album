@@ -7,6 +7,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
+
+
     <LinearLayout
         android:id="@+id/main_wrapper"
         android:layout_width="match_parent"
@@ -30,13 +32,29 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-<!--        <GridView-->
-<!--            android:id="@+id/sssss"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent" />-->
-
-
     </LinearLayout>
+
+
+    <com.akexorcist.roundcornerprogressbar.TextRoundCornerProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="260dp"
+        android:layout_height="60dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:rcBackgroundColor="#F6F6F6"
+        app:rcBackgroundPadding="2dp"
+        app:rcMax="100"
+        app:rcProgress="0"
+        app:rcAnimationEnable="true"
+        app:rcProgressColor="#D6E9D5"
+        app:rcTextProgressColor="@color/black"
+        app:rcTextPositionPriority="outside"
+        tools:ignore="MissingConstraints" />
+
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

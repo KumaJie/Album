@@ -2,21 +2,26 @@ package hust.album.adapter;
 
 
 import android.content.Context;
-import android.util.Log;
+import android.content.Intent;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+
+import java.util.ArrayList;
 import java.util.List;
 
+import hust.album.FullImageActivity;
 import hust.album.R;
 import hust.album.entity.Item;
 import hust.album.view.Global;
@@ -41,7 +46,14 @@ public class RAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         switch (viewType) {
             case Item.ITEM_TITLE: {
-                return new TitleViewHolder(new TextView(context));
+                TextView tv = new TextView(context);
+                tv.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                int space = (int) TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 10, context.getResources().getDisplayMetrics());
+                params.setMargins(space, 0, 0, 0);
+                tv.setLayoutParams(params);
+                return new TitleViewHolder(tv);
             }
             case Item.ITEM_IMG: {
                 View view = LayoutInflater.from(context).inflate(R.layout.item_4_image, parent, false);
@@ -66,6 +78,13 @@ public class RAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 for (int i = 0; i < 4; i++) {
                     if (i < item.getSize()) {
                         imgViewHolder.img[i].setVisibility(View.VISIBLE);
+                        int finalI = i;
+                        imgViewHolder.img[i].setOnClickListener(v -> {
+                            Intent intent = new Intent(context, FullImageActivity.class);
+                            intent.putExtra("images", new ArrayList<>(item.getImages()));
+                            intent.putExtra("position", finalI);
+                            context.startActivity(intent);
+                        });
                         Glide.with(context).load(Global.getInstance().getImagesByPos(item.getImageByPos(i)).getUri()).override(224).into(imgViewHolder.img[i]);
                     } else {
                         imgViewHolder.img[i].setVisibility(View.INVISIBLE);
@@ -91,12 +110,6 @@ public class RAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             this.tv = tv;
         }
     }
-
-    public void replace(List<Item> data) {
-        this.data = data;
-        notifyDataSetChanged();
-    }
-
 
 
 

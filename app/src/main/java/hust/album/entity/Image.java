@@ -18,6 +18,17 @@ public class Image implements Serializable {
 
     private long phash;
 
+    @Override
+    public String toString() {
+        return "Image{" +
+                "name='" + name + '\'' +
+                ", date=" + date +
+                ", latitude=" + latitude +
+                ", longitude=" + longitude +
+                ", phash=" + Long.toHexString(phash) +
+                '}';
+    }
+
     public long getPhash() {
         return phash;
     }

@@ -44,6 +44,10 @@ public class Item {
         return images.size();
     }
 
+    public List<Integer> getImages() {
+        return images;
+    }
+
     public void setImages(List<Integer> images) {
         this.images = images;
     }

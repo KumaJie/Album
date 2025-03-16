@@ -10,6 +10,16 @@ import hust.album.entity.Image;
 public class Global extends Application {
     private List<Image> images;
 
+    private boolean GPSInfo;
+
+    public boolean isGPSInfo() {
+        return GPSInfo;
+    }
+
+    public void setGPSInfo(boolean GPSInfo) {
+        this.GPSInfo = GPSInfo;
+    }
+
     private static Global instance;
 
     public static Global getInstance() {
@@ -37,6 +47,7 @@ public class Global extends Application {
     public void onCreate() {
         super.onCreate();
         images = new ArrayList<>();
+        GPSInfo = false;
         instance = this;
     }
 
