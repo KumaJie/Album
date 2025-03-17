@@ -1,7 +1,6 @@
 package hust.album;
 
 import android.os.Bundle;
-import android.util.TypedValue;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,7 +13,6 @@ import java.util.List;
 
 import hust.album.view.Global;
 import hust.album.adapter.ImageAdapter;
-import hust.album.adapter.ViewPagerItemDecoration;
 import hust.album.entity.Image;
 
 public class FullImageActivity extends AppCompatActivity {
@@ -52,11 +50,6 @@ public class FullImageActivity extends AppCompatActivity {
 
         ImageAdapter adapter = new ImageAdapter(this, images);
 
-        // 初始化 ItemDecoration
-        int space = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
-        ViewPagerItemDecoration itemDecoration = new ViewPagerItemDecoration(space);
-        viewPager.addItemDecoration(itemDecoration);
         // 添加回调监听滑动状态
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
@@ -69,30 +62,6 @@ public class FullImageActivity extends AppCompatActivity {
                 tv.setText(images.get(position).toString());
 
             }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-                super.onPageScrollStateChanged(state);
-                if (state == ViewPager2.SCROLL_STATE_DRAGGING) {
-                    for (int i = 0; i < viewPager.getItemDecorationCount(); i++) {
-                        if (viewPager.getItemDecorationAt(i).equals(itemDecoration)) {
-                            return;
-                        }
-                    }
-                    // 滑动时添加间距
-                    viewPager.addItemDecoration(itemDecoration);
-                }
-                // 静止时移除间距
-                if (state == ViewPager2.SCROLL_STATE_IDLE) {
-                    for (int i = 0; i < viewPager.getItemDecorationCount(); i++) {
-                        if (viewPager.getItemDecorationAt(i).equals(itemDecoration)) {
-                            viewPager.removeItemDecoration(itemDecoration);
-                            return;
-                        }
-                    }
-                }
-            }
-
         });
         viewPager.setAdapter(adapter);
         viewPager.setCurrentItem(pos, false);

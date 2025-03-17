@@ -18,14 +18,18 @@ public class Image implements Serializable {
 
     private long phash;
 
+    private String absolutePath;
+
     @Override
     public String toString() {
         return "Image{" +
-                "name='" + name + '\'' +
+                "uri='" + uri + '\'' +
+                ", name='" + name + '\'' +
                 ", date=" + date +
                 ", latitude=" + latitude +
                 ", longitude=" + longitude +
                 ", phash=" + Long.toHexString(phash) +
+                ", absolutePath='" + absolutePath + '\'' +
                 '}';
     }
 
@@ -70,6 +74,14 @@ public class Image implements Serializable {
         return latitude;
     }
 
+    public String getAbsolutePath() {
+        return absolutePath;
+    }
+
+    public void setAbsolutePath(String absolutePath) {
+        this.absolutePath = absolutePath;
+    }
+
     public void setLatitude(double latitude) {
         this.latitude = latitude;
     }
@@ -82,13 +94,14 @@ public class Image implements Serializable {
         this.longitude = longitude;
     }
 
-    public Image(Uri uri, String name, long time, double latitude, double longitude, long phash) {
+    public Image(Uri uri, String name, long time, double latitude, double longitude, long phash, String absolutePath) {
         this.uri = uri.toString();
         this.name = name;
         this.date = time;
         this.latitude = latitude;
         this.longitude = longitude;
         this.phash = phash;
+        this.absolutePath = absolutePath;
     }
 
 }

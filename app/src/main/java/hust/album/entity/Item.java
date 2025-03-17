@@ -14,6 +14,8 @@ public class Item {
 
     private List<Integer> images;
 
+    private List<Integer> cluster;
+
     public Item(int type, String title, List<Integer> images) {
         this.type = type;
         this.title = title;

@@ -37,13 +37,17 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import hust.album.adapter.ItemDecoration;
 import hust.album.adapter.RAdapter;
@@ -60,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
     private final FeatureExtractor fe = new FeatureExtractor();
 
     private final List<float[]> featrues = new ArrayList<>();
-
 
     private RecyclerView rv = null;
 
@@ -107,10 +110,11 @@ public class MainActivity extends AppCompatActivity {
         Toolbar tb = findViewById(R.id.toolbar);
         setSupportActionBar(tb);
 
-//        wrapper = findViewById(R.id.wrapper);
         progressBar = findViewById(R.id.progress_bar);
 
-        getAlbumPhotos(this);
+        if (!readStatus()) {
+            getAlbumPhotos(this);
+        }
 
         rv = findViewById(R.id.main_recycler_view);
 
@@ -124,6 +128,58 @@ public class MainActivity extends AppCompatActivity {
 //         按时间排序
         sortByTime();
     }
+
+    @Override
+    protected void onPause() {
+        saveStatus();
+        super.onPause();
+    }
+
+    private void saveStatus() {
+        File externalFilesDir = getExternalFilesDir(null);
+        File statusFile = new File(externalFilesDir, "status.txt");
+        if (statusFile.exists()) {
+            statusFile.delete();
+        }
+        try {
+            long start = System.currentTimeMillis();
+            ObjectOutputStream oo = new ObjectOutputStream(new FileOutputStream(statusFile));
+            oo.writeObject(Global.getInstance().getImages());
+            oo.writeObject(Global.getInstance().isGPSInfo());
+            Log.d("Album", "save status success: " + (System.currentTimeMillis() - start) + " ms");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean readStatus() {
+        File externalFilesDir = getExternalFilesDir(null);
+        File statusFile = new File(externalFilesDir, "status.txt");
+        if (statusFile.exists()) {
+            try {
+                long start = System.currentTimeMillis();
+                ObjectInputStream oi = new ObjectInputStream(new FileInputStream(statusFile));
+                Object o = oi.readObject();
+                if (o instanceof List) {
+                    Global.getInstance().setImages((List<Image>) o);
+                } else {
+                    return false;
+                }
+                o = oi.readObject();
+                if (o instanceof Boolean) {
+                    Global.getInstance().setGPSInfo((Boolean) o);
+                } else {
+                    return false;
+                }
+                Log.d("Album", "load status success: " + (System.currentTimeMillis() - start) + " ms");
+                return true;
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return false;
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -151,45 +207,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sortByTime() {
-        Map<String, List<Integer>> mp = new HashMap<>();
+        long start = System.currentTimeMillis();
+        Map<String, List<Integer>> mp = new TreeMap<>();
         for (int i = 0; i < Global.getInstance().getSize(); i++) {
             String date = Global.getInstance().getImagesByPos(i).getDate("yyyy-MM-dd");
-            if (mp.containsKey(date)) {
-                mp.get(date).add(i);
-            } else {
-                ArrayList<Integer> temp = new ArrayList<>();
-                temp.add(i);
-                mp.put(date, temp);
+            if (!mp.containsKey(date)) {
+                mp.put(date, new ArrayList<>());
             }
+            mp.get(date).add(i);
         }
 
-        ArrayList<String> keys = new ArrayList<>(mp.keySet());
-        keys.sort((o1, o2) -> {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            try {
-                Date d1 = dateFormat.parse(o1);
-                Date d2 = dateFormat.parse(o2);
-                return d2.compareTo(d1);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+        Log.d("Album", "sortByTime spend " + (System.currentTimeMillis() - start) + " ms");
 
         List<Item> items = new ArrayList<>();
-
-        for (String key : keys) {
-            items.add(new Item(Item.ITEM_TITLE, key, null));
-
-            int len = mp.get(key).size();
-            for (int i = 0; i < len; i += 4) {
-                if (i + 4 <= len) {
-                    items.add(new Item(Item.ITEM_IMG, null, mp.get(key).subList(i, i + 4)));
+        List<String> keys = new ArrayList<>(mp.keySet());
+        for (int i = keys.size() - 1; i >= 0; i--) {
+            String key = keys.get(i);
+            List<Integer> cluster = mp.get(key);
+            items.add(new Item(Item.ITEM_TITLE, key, cluster));
+            for (int j = 0; j < cluster.size(); j += 4) {
+                if (j + 4 <= cluster.size()) {
+                    items.add(new Item(Item.ITEM_IMG, null, cluster.subList(j, j + 4)));
                 } else {
-                    items.add(new Item(Item.ITEM_IMG, null, mp.get(key).subList(i, len)));
+                    items.add(new Item(Item.ITEM_IMG, null, cluster.subList(j, cluster.size())));
                 }
             }
         }
-
         rv.setAdapter(new RAdapter(this, items));
     }
 
@@ -204,11 +247,10 @@ public class MainActivity extends AppCompatActivity {
             long s = System.currentTimeMillis();
             res = clusterer.performClustering();
             long elapse = System.currentTimeMillis() - s;
-            Log.d("DBSCAN", "spend" + elapse + " ms");
-            Log.d("DBSCAN", "find " + res.size() + " cluster");
+            Log.d("Album", "DBSCAN spend " + elapse + " ms, find " + res.size() + " cluster");
 
         } catch (Exception e) {
-            Log.e("DBSCAN", e.getMessage());
+            Log.e("Album", "DBSCAN error: " + e.getMessage());
         }
 
         List<Item> items = new ArrayList<>();
@@ -216,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
             if (cluster.size() < 2) {
                 continue;
             }
-            items.add(new Item(Item.ITEM_TITLE, "强关联图片", null));
+            items.add(new Item(Item.ITEM_TITLE, "强关联图片", cluster));
 
             for (int i = 0; i < cluster.size(); i += 4) {
                 if (i + 4 <= cluster.size()) {
@@ -257,7 +299,7 @@ public class MainActivity extends AppCompatActivity {
         List<Image> images = Global.getInstance().getImages();
         List<Item> items = new ArrayList<>();
         for (int i = 0; i < images.size(); i++) {
-            items.add(new Item(Item.ITEM_TITLE, "相似图片", null));
+            items.add(new Item(Item.ITEM_TITLE, "强关联图片", pos.subList(i * k, (i + 1) * k)));
             items.add(new Item(Item.ITEM_IMG, null, pos.subList(i * k, (i + 1) * k)));
         }
         handler.post(() -> rv.setAdapter(new RAdapter(this, items)));
@@ -269,6 +311,7 @@ public class MainActivity extends AppCompatActivity {
                 MediaStore.Images.Media._ID,
                 MediaStore.Images.Media.DISPLAY_NAME,
                 MediaStore.Images.Media.DATE_TAKEN,
+                MediaStore.Images.Media.DATA
         };
         long start = System.currentTimeMillis();
         try (Cursor cursor = context.getContentResolver().query(
@@ -281,6 +324,7 @@ public class MainActivity extends AppCompatActivity {
                 int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID);
                 int nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME);
                 int dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN);
+                int absolutePathColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
                 while (cursor.moveToNext()) {
                     long id = cursor.getLong(idColumn);
                     String name = cursor.getString(nameColumn);
@@ -289,7 +333,9 @@ public class MainActivity extends AppCompatActivity {
                     Uri contentUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
                     contentUri = MediaStore.setRequireOriginal(contentUri);
 
-                    Global.getInstance().addImage(new Image(contentUri, name, time, 0, 0, 0));
+                    String absolutePath = cursor.getString(absolutePathColumn);
+
+                    Global.getInstance().addImage(new Image(contentUri, name, time, 0, 0, 0, absolutePath));
                 }
             }
         } catch (Exception e) {
@@ -333,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
             int finalI = i;
             handler.post(() -> progressBar.setProgress((float) finalI / images.size() * 100));
         }
-        handler.post(() ->progressBar.setVisibility(View.GONE));
+        handler.post(() -> progressBar.setVisibility(View.GONE));
         Global.getInstance().setGPSInfo(true);
         Log.d("getGPSInfo", "spend " + (System.currentTimeMillis() - start) + " ms");
     }
@@ -391,7 +437,7 @@ public class MainActivity extends AppCompatActivity {
             int finalI = i;
             handler.post(() -> progressBar.setProgress((float) finalI / images.size() * 100));
         }
-        handler.post(() ->progressBar.setVisibility(View.GONE));
+        handler.post(() -> progressBar.setVisibility(View.GONE));
 
         Log.d("getFeature", "spend " + (System.currentTimeMillis() - start) + " ms");
     }

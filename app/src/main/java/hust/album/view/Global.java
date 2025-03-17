@@ -10,6 +10,8 @@ import hust.album.entity.Image;
 public class Global extends Application {
     private List<Image> images;
 
+    private List<Integer> selected;
+
     private boolean GPSInfo;
 
     public boolean isGPSInfo() {
@@ -42,6 +44,9 @@ public class Global extends Application {
         return images;
     }
 
+    public void setImages(List<Image> images) {
+        this.images = images;
+    }
 
     @Override
     public void onCreate() {
