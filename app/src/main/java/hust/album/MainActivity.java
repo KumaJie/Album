@@ -136,14 +136,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveStatus() {
-        File externalFilesDir = getExternalFilesDir(null);
+        File externalFilesDir = getExternalCacheDir();
         File statusFile = new File(externalFilesDir, "status.txt");
-        if (statusFile.exists()) {
-            statusFile.delete();
-        }
         try {
             long start = System.currentTimeMillis();
-            ObjectOutputStream oo = new ObjectOutputStream(new FileOutputStream(statusFile));
+            ObjectOutputStream oo = new ObjectOutputStream(new FileOutputStream(statusFile, false));
             oo.writeObject(Global.getInstance().getImages());
             oo.writeObject(Global.getInstance().isGPSInfo());
             Log.d("Album", "save status success: " + (System.currentTimeMillis() - start) + " ms");
@@ -153,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean readStatus() {
-        File externalFilesDir = getExternalFilesDir(null);
+        File externalFilesDir = getExternalCacheDir();
         File statusFile = new File(externalFilesDir, "status.txt");
         if (statusFile.exists()) {
             try {
@@ -174,7 +171,42 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("Album", "load status success: " + (System.currentTimeMillis() - start) + " ms");
                 return true;
             } catch (IOException | ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                Log.e("Album", "load status error: " + e);
+            }
+        }
+        return false;
+    }
+
+    private void saveFeatures() {
+        File externalFilesDir = getExternalCacheDir();
+        File statusFile = new File(externalFilesDir, "features.txt");
+        try {
+            long start = System.currentTimeMillis();
+            ObjectOutputStream oo = new ObjectOutputStream(new FileOutputStream(statusFile, false));
+            oo.writeObject(featrues);
+            Log.d("Album", "save features success: " + (System.currentTimeMillis() - start) + " ms");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean readFeatures() {
+        File externalFilesDir = getExternalCacheDir();
+        File featuresFile = new File(externalFilesDir, "features.txt");
+        if (featuresFile.exists()) {
+            try {
+                long start = System.currentTimeMillis();
+                ObjectInputStream oi = new ObjectInputStream(new FileInputStream(featuresFile));
+                Object o = oi.readObject();
+                if (o instanceof List) {
+                    featrues.addAll((List<float[]>) o);
+                } else {
+                    return false;
+                }
+                Log.d("Album", "load features success: " + (System.currentTimeMillis() - start) + " ms");
+                return true;
+            } catch (IOException | ClassNotFoundException e) {
+                Log.e("Album", "load features error: " + e);
             }
         }
         return false;
@@ -209,8 +241,9 @@ public class MainActivity extends AppCompatActivity {
     public void sortByTime() {
         long start = System.currentTimeMillis();
         Map<String, List<Integer>> mp = new TreeMap<>();
-        for (int i = 0; i < Global.getInstance().getSize(); i++) {
-            String date = Global.getInstance().getImagesByPos(i).getDate("yyyy-MM-dd");
+        List<Image> images = Global.getInstance().getImages();
+        for (int i = 0; i < images.size(); i++) {
+            String date = images.get(i).getDate("yyyy-MM-dd");
             if (!mp.containsKey(date)) {
                 mp.put(date, new ArrayList<>());
             }
@@ -258,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
             if (cluster.size() < 2) {
                 continue;
             }
-            items.add(new Item(Item.ITEM_TITLE, "强关联图片", cluster));
+            items.add(new Item(Item.ITEM_TITLE, getString(R.string.item_name), cluster));
 
             for (int i = 0; i < cluster.size(); i += 4) {
                 if (i + 4 <= cluster.size()) {
@@ -273,35 +306,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sortByFeature() {
-        if (featrues.isEmpty()) {
+        if (featrues.isEmpty() && !readFeatures()) {
             getFeature();
+            saveFeatures();
         }
-
 
         int d = featrues.get(0).length;
-        float[] data = new float[d * featrues.size()];
-        for (int i = 0; i < featrues.size(); i++) {
-            System.arraycopy(featrues.get(i), 0, data, i * d, d);
+
+        Index index = new Index(getExternalCacheDir().getAbsolutePath(), false);
+        index.init();
+        List<List<Integer>>  ret = index.match(featrues, d, 0.9f);
+        if (ret == null) {
+            return;
         }
 
-        Index index = new Index();
-        int k = 5;
-        int[] labels = index.match(data, d, k);
-        if (labels.length != k * featrues.size()) {
-            throw new RuntimeException("match error");
-        }
-
-        List<Integer> pos = new ArrayList<>();
-        for (int label : labels) {
-            pos.add(label);
-        }
-
-        List<Image> images = Global.getInstance().getImages();
         List<Item> items = new ArrayList<>();
-        for (int i = 0; i < images.size(); i++) {
-            items.add(new Item(Item.ITEM_TITLE, "强关联图片", pos.subList(i * k, (i + 1) * k)));
-            items.add(new Item(Item.ITEM_IMG, null, pos.subList(i * k, (i + 1) * k)));
+        for (List<Integer> cluster : ret) {
+            items.add(new Item(Item.ITEM_TITLE, getString(R.string.item_name), cluster));
+            for (int i = 0; i < cluster.size(); i += 4) {
+                if (i + 4 <= cluster.size()) {
+                    items.add(new Item(Item.ITEM_IMG, null, cluster.subList(i, i + 4)));
+                } else {
+                    items.add(new Item(Item.ITEM_IMG, null, cluster.subList(i, cluster.size())));
+                }
+            }
         }
+
         handler.post(() -> rv.setAdapter(new RAdapter(this, items)));
     }
 

@@ -4,4 +4,6 @@
     <string name="origin">原始</string>
     <string name="space_time">时空聚类</string>
     <string name="deep">深度识别</string>
+    <string name="dedup">去重</string>
+    <string name="complete">完成</string>
 </resources>

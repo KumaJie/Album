@@ -9,6 +9,7 @@ set_target_properties(omp PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libom
 add_library(${PROJECT_NAME} SHARED
     # List C/C++ source files with relative paths to this CMakeLists.txt.
     index.cpp
+    UnionFind.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
