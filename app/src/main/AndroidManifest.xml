@@ -19,6 +19,7 @@
         android:theme="@style/Theme.Album"
         tools:targetApi="31"
         android:name=".view.Global"
+        android:enableOnBackInvokedCallback="true"
         >
         <profileable android:shell="true" />
         <activity

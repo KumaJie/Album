@@ -4,6 +4,7 @@ package hust.album;
 import android.Manifest;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -17,12 +18,15 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.Menu;
 import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.exifinterface.media.ExifInterface;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -44,8 +48,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -57,6 +65,7 @@ import hust.album.entity.Image;
 import hust.album.entity.Item;
 import hust.album.jni.FeatureExtractor;
 import hust.album.jni.Index;
+import hust.album.util.ParameterConfig;
 import hust.album.view.Global;
 
 public class MainActivity extends AppCompatActivity {
@@ -67,9 +76,37 @@ public class MainActivity extends AppCompatActivity {
 
     private RecyclerView rv = null;
 
+    private FrameLayout container = null;
+
     private TextRoundCornerProgressBar progressBar = null;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
+
+    private SharedPreferences.OnSharedPreferenceChangeListener listener = (sharedPreferences, key) -> {
+        switch (key) {
+            case "force_create_album":
+                ParameterConfig.FORCE_CREATE_ALBUM = sharedPreferences.getBoolean("force_create_album", ParameterConfig.FORCE_CREATE_ALBUM);
+                break;
+            case "force_extract_exif":
+                ParameterConfig.FORCE_EXTRACT_EXIF = sharedPreferences.getBoolean("force_extract_exif", ParameterConfig.FORCE_EXTRACT_EXIF);
+                break;
+            case "force_extract_features":
+                ParameterConfig.FORCE_EXTRACT_FEATURES = sharedPreferences.getBoolean("force_extract_features", ParameterConfig.FORCE_EXTRACT_FEATURES);
+                break;
+            case "force_train_index":
+                ParameterConfig.FORCE_TRAIN_INDEX = sharedPreferences.getBoolean("force_train_index", ParameterConfig.FORCE_TRAIN_INDEX);
+                break;
+            case "similarity_threshold":
+                String number = sharedPreferences.getString("similarity_threshold", "0.9");
+                try {
+                    ParameterConfig.SIMILARITY_THRESHOLD = Float.parseFloat(number);
+                } catch (NumberFormatException | NullPointerException e) {
+                    ParameterConfig.SIMILARITY_THRESHOLD = 0.9f;
+                }
+                break;
+        }
+        Log.d("Album", "config: " + ParameterConfig.fmtString());
+    };
 
     private void checkAndRequestPermissions() {
 //       访问照片权限
@@ -109,18 +146,23 @@ public class MainActivity extends AppCompatActivity {
 
         Toolbar tb = findViewById(R.id.toolbar);
         setSupportActionBar(tb);
+//        一定要在setSupportActionBar之后调用
+        tb.setNavigationOnClickListener(v -> {
+            back();
+        });
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
 
         progressBar = findViewById(R.id.progress_bar);
 
-        if (!readStatus()) {
+        container = findViewById(R.id.settings_container);
+        initConfig();
+
+        if (ParameterConfig.FORCE_CREATE_ALBUM || !readStatus()) {
             getAlbumPhotos(this);
         }
 
         rv = findViewById(R.id.main_recycler_view);
-
         rv.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-
-
         int space = (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, 1, getResources().getDisplayMetrics());
         rv.addItemDecoration(new ItemDecoration(space));
@@ -129,10 +171,32 @@ public class MainActivity extends AppCompatActivity {
         sortByTime();
     }
 
+    public void back() {
+        if(getSupportFragmentManager().getBackStackEntryCount() > 0) {
+            getSupportFragmentManager().popBackStack();
+            container.setVisibility(View.GONE);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            rv.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void initConfig() {
+        //        初始化配置
+        ParameterConfig.getDefaults(this);
+    }
+
+
     @Override
     protected void onPause() {
-        saveStatus();
+        PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(listener);
+        new Thread(this::saveStatus).start();
         super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(listener);
+        super.onResume();
     }
 
     private void saveStatus() {
@@ -142,8 +206,10 @@ public class MainActivity extends AppCompatActivity {
             long start = System.currentTimeMillis();
             ObjectOutputStream oo = new ObjectOutputStream(new FileOutputStream(statusFile, false));
             oo.writeObject(Global.getInstance().getImages());
-            oo.writeObject(Global.getInstance().isGPSInfo());
-            Log.d("Album", "save status success: " + (System.currentTimeMillis() - start) + " ms");
+            oo.writeBoolean(Global.getInstance().isGPSInfo());
+            oo.close();
+            Log.d("Album", String.format(Locale.getDefault(), "save status success, image number %d, GPSInfo %b, time %d ms",
+                    Global.getInstance().getSize(), Global.getInstance().isGPSInfo(), System.currentTimeMillis() - start));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -155,20 +221,17 @@ public class MainActivity extends AppCompatActivity {
         if (statusFile.exists()) {
             try {
                 long start = System.currentTimeMillis();
-                ObjectInputStream oi = new ObjectInputStream(new FileInputStream(statusFile));
-                Object o = oi.readObject();
+                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(statusFile));
+                Object o = ois.readObject();
                 if (o instanceof List) {
                     Global.getInstance().setImages((List<Image>) o);
                 } else {
                     return false;
                 }
-                o = oi.readObject();
-                if (o instanceof Boolean) {
-                    Global.getInstance().setGPSInfo((Boolean) o);
-                } else {
-                    return false;
-                }
-                Log.d("Album", "load status success: " + (System.currentTimeMillis() - start) + " ms");
+                Global.getInstance().setGPSInfo(ois.readBoolean());
+                ois.close();
+                Log.d("Album", String.format(Locale.getDefault(), "load status success, image number %d, GPSInfo %b, time %d ms",
+                        Global.getInstance().getSize(), Global.getInstance().isGPSInfo(), System.currentTimeMillis() - start));
                 return true;
             } catch (IOException | ClassNotFoundException e) {
                 Log.e("Album", "load status error: " + e);
@@ -199,11 +262,12 @@ public class MainActivity extends AppCompatActivity {
                 ObjectInputStream oi = new ObjectInputStream(new FileInputStream(featuresFile));
                 Object o = oi.readObject();
                 if (o instanceof List) {
+                    featrues.clear();
                     featrues.addAll((List<float[]>) o);
                 } else {
                     return false;
                 }
-                Log.d("Album", "load features success: " + (System.currentTimeMillis() - start) + " ms");
+                Log.d("Album", "load features success, feature number " + featrues.size() + ", time " + (System.currentTimeMillis() - start) + " ms");
                 return true;
             } catch (IOException | ClassNotFoundException e) {
                 Log.e("Album", "load features error: " + e);
@@ -225,14 +289,22 @@ public class MainActivity extends AppCompatActivity {
             sortByTime();
             return true;
         } else if (item.getItemId() == R.id.time) {
-            new Thread(() -> {
-                sortByDBSCAN();
-            }).start();
+            new Thread(this::sortByDBSCAN).start();
             return true;
         } else if (item.getItemId() == R.id.deep) {
             new Thread(() -> {
                 sortByFeature();
             }).start();
+            return true;
+        } else if (item.getItemId() == R.id.settings) {
+            rv.setVisibility(View.GONE);
+            container.setVisibility(View.VISIBLE);
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.settings_container, new SettingsFragment())
+                    .addToBackStack(null)
+                    .commit();
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -240,22 +312,24 @@ public class MainActivity extends AppCompatActivity {
 
     public void sortByTime() {
         long start = System.currentTimeMillis();
-        Map<String, List<Integer>> mp = new TreeMap<>();
+        Map<String, List<Integer>> mp = new HashMap<>();
         List<Image> images = Global.getInstance().getImages();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         for (int i = 0; i < images.size(); i++) {
-            String date = images.get(i).getDate("yyyy-MM-dd");
+            String date = images.get(i).getDate(formatter);
             if (!mp.containsKey(date)) {
                 mp.put(date, new ArrayList<>());
             }
             mp.get(date).add(i);
         }
+        List<String> dates = new ArrayList<>(mp.keySet());
+        dates.sort(Comparator.reverseOrder());
 
         Log.d("Album", "sortByTime spend " + (System.currentTimeMillis() - start) + " ms");
 
         List<Item> items = new ArrayList<>();
-        List<String> keys = new ArrayList<>(mp.keySet());
-        for (int i = keys.size() - 1; i >= 0; i--) {
-            String key = keys.get(i);
+
+        for (String key : dates) {
             List<Integer> cluster = mp.get(key);
             items.add(new Item(Item.ITEM_TITLE, key, cluster));
             for (int j = 0; j < cluster.size(); j += 4) {
@@ -270,7 +344,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sortByDBSCAN() {
-        if (!Global.getInstance().isGPSInfo()) {
+        if (ParameterConfig.FORCE_EXTRACT_EXIF || !Global.getInstance().isGPSInfo()) {
             getGPSInfo();
         }
         List<ArrayList<Integer>> res = new ArrayList<>();
@@ -306,16 +380,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sortByFeature() {
-        if (featrues.isEmpty() && !readFeatures()) {
+        if (ParameterConfig.FORCE_EXTRACT_FEATURES || (featrues.isEmpty() && !readFeatures())) {
             getFeature();
             saveFeatures();
         }
 
         int d = featrues.get(0).length;
 
-        Index index = new Index(getExternalCacheDir().getAbsolutePath(), false);
+        Index index = new Index(getExternalCacheDir().getAbsolutePath(), ParameterConfig.FORCE_TRAIN_INDEX);
         index.init();
-        List<List<Integer>>  ret = index.match(featrues, d, 0.9f);
+        List<List<Integer>>  ret = index.match(featrues, d, ParameterConfig.SIMILARITY_THRESHOLD);
         if (ret == null) {
             return;
         }

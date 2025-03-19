@@ -1,16 +1,27 @@
 package hust.album;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
+
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
+import hust.album.ffmpeg.FFmpegHandler;
+import hust.album.ffmpeg.FFmpegProc;
 import hust.album.view.Global;
 import hust.album.adapter.ImageAdapter;
 import hust.album.entity.Image;
@@ -21,6 +32,12 @@ public class FullImageActivity extends AppCompatActivity {
     private int pos;
 
     private TextView tv;
+
+    private FloatingActionsMenu actionsMenu;
+
+    private FloatingActionButton downloadButton;
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +50,8 @@ public class FullImageActivity extends AppCompatActivity {
         });
 
         tv = findViewById(R.id.detail);
+        actionsMenu = findViewById(R.id.multiple_actions);
+        downloadButton = findViewById(R.id.download_action);
 
         ViewPager2 viewPager = findViewById(R.id.view_pager);
 
@@ -50,16 +69,33 @@ public class FullImageActivity extends AppCompatActivity {
 
         ImageAdapter adapter = new ImageAdapter(this, images);
 
+        FFmpegProc ffmpegProc = new FFmpegProc(this);
+
         // 添加回调监听滑动状态
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
                 pos = position;
-                tb.setTitle(images.get(position).getName());
-                tb.setSubtitle(images.get(position).getDate("yyyy-MM-dd HH:mm:ss"));
+                Image image = images.get(position);
 
-                tv.setText(images.get(position).toString());
+                tb.setTitle(image.getName());
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                tb.setSubtitle(image.getDate(formatter));
+                tv.setText(image.toString());
+
+                actionsMenu.setEnabled(image.isCompressed());
+
+                downloadButton.setOnClickListener(v -> {
+                     ffmpegProc.extractPhoto(image, new FFmpegHandler() {
+                        @Override
+                        protected void handle() {
+                            handler.post(() -> {
+                                Toast.makeText(FullImageActivity.this, "图片已保存", Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
+                });
 
             }
         });

@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "hust.album"
-        minSdk 30
+        minSdk 33
         targetSdk 35
         versionCode 1
         versionName "1.0"
@@ -60,5 +60,7 @@ dependencies {
     implementation 'com.akexorcist:round-corner-progress-bar:2.2.1'
     implementation "com.arthenica:ffmpeg-kit-min-gpl:6.0-2"
     implementation "com.github.dmytrodanylyk:circular-progress-button:1.4"
+    implementation "androidx.preference:preference:1.2.1"
+    implementation "com.getbase:floatingactionbutton:1.10.1"
     implementation project(':opencv')
 }

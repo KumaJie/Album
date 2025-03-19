@@ -5,6 +5,9 @@ import android.net.Uri;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
 
@@ -80,9 +83,9 @@ public class Image implements Serializable {
         return date;
     }
 
-    public String getDate(String format) {
-        DateFormat df = new SimpleDateFormat(format, Locale.getDefault());
-        return df.format(new Date(date));
+    public String getDate(DateTimeFormatter format) {
+        LocalDateTime dateTime = LocalDateTime.ofInstant(new Date(date).toInstant(), ZoneId.systemDefault());
+        return dateTime.format(format);
     }
 
     public void setDate(long date) {

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <SwitchPreferenceCompat
+        android:key="force_create_album"
+        android:title="强制构建相册"
+        android:defaultValue="false" />
+    <SwitchPreferenceCompat
+        android:key="force_extract_exif"
+        android:title="强制提取时空信息"
+        android:defaultValue="false" />
+    <SwitchPreferenceCompat
+        android:key="force_extract_features"
+        android:title="强制提取图片特征"
+        android:defaultValue="false" />
+    <SwitchPreferenceCompat
+        android:key="force_train_index"
+        android:title="强制训练索引"
+        android:defaultValue="false" />
+    <EditTextPreference
+        android:key="similarity_threshold"
+        android:title="搜索阈值"
+        android:defaultValue="0.9" />
+
+</androidx.preference.PreferenceScreen>

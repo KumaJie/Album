@@ -99,7 +99,7 @@ Java_hust_album_jni_Index_match(JNIEnv *env, jobject thiz, jobject data, jint d,
         //        保存索引
         start = std::chrono::steady_clock::now();
         faiss::write_index(index.get(), indexFile.c_str());
-        LOGD("write index success time: %lld ms", std::chrono::duration_cast<std::chrono::milliseconds>(
+        LOGD("write index success, index num %lld, time: %lld ms", index->ntotal, std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - start).count());
     } else {
         auto ivfIndex = dynamic_cast<faiss::IndexIVFFlat*>(faiss::read_index(indexFile.c_str()));
@@ -109,7 +109,7 @@ Java_hust_album_jni_Index_match(JNIEnv *env, jobject thiz, jobject data, jint d,
         }
 
         index.reset(ivfIndex);
-        LOGD("load index success time: %lld ms", std::chrono::duration_cast<std::chrono::milliseconds>(
+        LOGD("load index success, index num %lld, time: %lld ms", index->ntotal, std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - start).count());
     }
 
@@ -122,7 +122,6 @@ Java_hust_album_jni_Index_match(JNIEnv *env, jobject thiz, jobject data, jint d,
         LOGD("search time: %lld ms", std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - start).count());
     }
-
     UnionFind uf(n);
     for (int i = 0; i < n; i++) {
         if (result.lims[i + 1] - result.lims[i] == 1) {

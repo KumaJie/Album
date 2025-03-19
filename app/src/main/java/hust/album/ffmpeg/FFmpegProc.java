@@ -101,18 +101,23 @@ public class FFmpegProc {
         return "VID_" + prefix + ".mp4";
     }
 
-    public void extractPhoto(int pos) {
-        Image image = Global.getInstance().getImagesByPos(pos);
+    public void extractPhoto(Image image, FFmpegHandler handler) {
         if (!image.isCompressed()) {
+            Log.d("FFmpegProc", "extractPhoto: image is not compressed");
             return;
         }
 
         String path = image.getVideoPath();
         String outputPath = context.getExternalFilesDir("tmp").getAbsolutePath() + "/tmp.jpg";
         String cmd = String.format(Locale.getDefault(), "-i %s -q:v 2 -vf 'select=eq(n\\,%d)' -y %s", path, image.getFramePos(), outputPath);
-        FFmpegSession session = FFmpegKit.execute(cmd);
-        if (!ReturnCode.isSuccess(session.getReturnCode())) {
-            Log.e("FFmpegProc", "extractPhote: failed with state %s" + session.getState());
-        }
+        Log.d("FFmpegProc", "extractPhoto: " + cmd);
+        FFmpegKit.executeAsync(cmd, session -> {
+            if (!ReturnCode.isSuccess(session.getReturnCode())) {
+                Log.e("FFmpegProc", "extractPhote: failed with state %s" + session.getState());
+            } else {
+                handler.handle();
+            }
+        });
+
     }
 }

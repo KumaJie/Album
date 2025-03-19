@@ -7,33 +7,37 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
-
-
-    <LinearLayout
-        android:id="@+id/main_wrapper"
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        tools:layout_editor_absoluteX="-93dp"
-        tools:layout_editor_absoluteY="81dp">
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme"
+        app:popupTheme="@style/popup_theme"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="@string/app_name"
+        app:navigationIcon="?attr/actionModeCloseDrawable"/>
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/white"
-            android:minHeight="?attr/actionBarSize"
-            android:theme="?attr/actionBarTheme"
-            app:popupTheme="@style/popup_theme"
-            app:title="@string/app_name" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/main_recycler_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
 
-    </LinearLayout>
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/main_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+
+    <FrameLayout
+        android:id="@+id/settings_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
     <com.akexorcist.roundcornerprogressbar.TextRoundCornerProgressBar
         android:id="@+id/progress_bar"
@@ -52,7 +56,9 @@
         app:rcProgressColor="#D6E9D5"
         app:rcTextProgressColor="@color/black"
         app:rcTextPositionPriority="outside"
-        tools:ignore="MissingConstraints" />
+        tools:ignore="MissingConstraints" >
+
+    </com.akexorcist.roundcornerprogressbar.TextRoundCornerProgressBar>
 
 
 
