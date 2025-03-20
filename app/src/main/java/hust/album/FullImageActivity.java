@@ -24,28 +24,22 @@ import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-
+import hust.album.adapter.ImageAdapter;
+import hust.album.entity.Image;
 import hust.album.ffmpeg.FFmpegHandler;
 import hust.album.ffmpeg.FFmpegProc;
 import hust.album.view.Global;
-import hust.album.adapter.ImageAdapter;
-import hust.album.entity.Image;
 
 public class FullImageActivity extends AppCompatActivity {
 
+    private final Handler handler = new Handler(Looper.getMainLooper());
     private List<Image> images;
     private int pos;
-
     private TextView tv;
-
     private FloatingActionsMenu actionsMenu;
-
     private FloatingActionButton downloadButton;
-
-    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,7 +91,7 @@ public class FullImageActivity extends AppCompatActivity {
                 actionsMenu.setEnabled(image.isCompressed());
 
                 downloadButton.setOnClickListener(v -> {
-                     ffmpegProc.extractPhoto(image, new FFmpegHandler() {
+                    ffmpegProc.extractPhoto(image, new FFmpegHandler() {
                         @Override
                         protected void handle(String msg) {
                             ContentValues contentValues = new ContentValues();

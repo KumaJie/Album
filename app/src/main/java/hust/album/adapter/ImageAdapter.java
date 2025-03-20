@@ -25,12 +25,18 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         this.images = images;
     }
 
+    public class ImageViewHolder extends RecyclerView.ViewHolder {
+        ImageView imageView;
 
-    @NonNull
+        public ImageViewHolder(View itemView) {
+            super(itemView);
+            imageView = itemView.findViewById(R.id.big_image_view);
+        }
+    }
+
     @Override
-    public ImageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_big_image, parent, false);
-        return new ImageViewHolder(view);
+    public int getItemCount() {
+        return images.size();
     }
 
     @Override
@@ -43,17 +49,10 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         }
     }
 
+    @NonNull
     @Override
-    public int getItemCount() {
-        return images.size();
-    }
-
-    public class ImageViewHolder extends RecyclerView.ViewHolder {
-        ImageView imageView;
-
-        public ImageViewHolder(View itemView) {
-            super(itemView);
-            imageView = itemView.findViewById(R.id.big_image_view);
-        }
+    public ImageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_big_image, parent, false);
+        return new ImageViewHolder(view);
     }
 }

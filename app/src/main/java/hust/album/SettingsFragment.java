@@ -13,6 +13,8 @@ import androidx.annotation.Nullable;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
+import com.bumptech.glide.Glide;
+
 import java.io.File;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
@@ -44,6 +46,18 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 } else {
                     Toast.makeText(requireContext(), "压缩文件清理失败", Toast.LENGTH_SHORT).show();
                 }
+                return true;
+            });
+        }
+
+        Preference resetGlideButton = findPreference("force_reset_glide");
+        if (resetGlideButton != null) {
+            resetGlideButton.setOnPreferenceClickListener(preference -> {
+                new Thread(() -> {
+                    Glide.get(requireContext()).clearDiskCache();
+                    Glide.get(requireContext()).clearMemory();
+                }).start();
+                Toast.makeText(requireContext(), "Glide缓存已被清理", Toast.LENGTH_SHORT).show();
                 return true;
             });
         }

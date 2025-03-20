@@ -26,8 +26,8 @@ import hust.album.FullImageActivity;
 import hust.album.R;
 import hust.album.entity.Image;
 import hust.album.entity.Item;
-import hust.album.ffmpeg.FFmpegProc;
 import hust.album.ffmpeg.FFmpegHandler;
+import hust.album.ffmpeg.FFmpegProc;
 import hust.album.view.Global;
 
 public class RAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -48,27 +48,45 @@ public class RAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
-    @Override
-    public int getItemViewType(int position) {
-        return data.get(position).getType();
+    public class TitleViewHolder extends RecyclerView.ViewHolder {
+        private TextView tv;
+        private CircularProgressButton button;
+
+        public TitleViewHolder(View view) {
+            super(view);
+
+            this.tv = view.findViewById(R.id.item_title_textView);
+            this.button = view.findViewById(R.id.item_title_button);
+        }
+    }
+
+    public class ImgViewHolder extends RecyclerView.ViewHolder {
+        private final ImageView[] img = new ImageView[4];
+
+        public ImgViewHolder(View view, int allWidth) {
+            super(view);
+
+            int[] imgRes = {R.id.item_4_image1, R.id.item_4_image2, R.id.item_4_image3, R.id.item_4_image4};
+            for (int i = 0; i < img.length; i++) {
+                img[i] = view.findViewById(imgRes[i]);
+                ViewGroup.LayoutParams params = img[i].getLayoutParams();
+                int space = (int) TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 3, context.getResources().getDisplayMetrics());
+                params.width = (allWidth - space) / 4;
+                img[i].setLayoutParams(params);
+            }
+
+        }
     }
 
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public int getItemCount() {
+        return data.size();
+    }
 
-        switch (viewType) {
-            case Item.ITEM_TITLE: {
-                View view = LayoutInflater.from(context).inflate(R.layout.item_title, parent, false);
-
-                return new TitleViewHolder(view);
-            }
-            case Item.ITEM_IMG: {
-                View view = LayoutInflater.from(context).inflate(R.layout.item_4_image, parent, false);
-
-                return new ImgViewHolder(view, parent.getWidth());
-            }
-        }
-        return null;
+    @Override
+    public int getItemViewType(int position) {
+        return data.get(position).getType();
     }
 
     @Override
@@ -129,59 +147,37 @@ public class RAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
-@Override
-public int getItemCount() {
-    return data.size();
-}
+        switch (viewType) {
+            case Item.ITEM_TITLE: {
+                View view = LayoutInflater.from(context).inflate(R.layout.item_title, parent, false);
 
+                return new TitleViewHolder(view);
+            }
+            case Item.ITEM_IMG: {
+                View view = LayoutInflater.from(context).inflate(R.layout.item_4_image, parent, false);
 
-private int getNearestTitlePosition(int position) {
-    if (data.get(position).getType() == Item.ITEM_TITLE) {
-        return position;
-    }
-    int i = 0, j = title.size() - 1;
-    while (i < j) {
-        int mid = (i + j + 1) >> 1;
-        if (title.get(mid) < position) {
-            i = mid;
-        } else {
-            j = mid - 1;
+                return new ImgViewHolder(view, parent.getWidth());
+            }
         }
+        return null;
     }
-    return title.get(i);
-}
 
-
-public class TitleViewHolder extends RecyclerView.ViewHolder {
-    private TextView tv;
-    private CircularProgressButton button;
-
-    public TitleViewHolder(View view) {
-        super(view);
-
-        this.tv = view.findViewById(R.id.item_title_textView);
-        this.button = view.findViewById(R.id.item_title_button);
-    }
-}
-
-
-public class ImgViewHolder extends RecyclerView.ViewHolder {
-    private final ImageView[] img = new ImageView[4];
-
-    public ImgViewHolder(View view, int allWidth) {
-        super(view);
-
-        int[] imgRes = {R.id.item_4_image1, R.id.item_4_image2, R.id.item_4_image3, R.id.item_4_image4};
-        for (int i = 0; i < img.length; i++) {
-            img[i] = view.findViewById(imgRes[i]);
-            ViewGroup.LayoutParams params = img[i].getLayoutParams();
-            int space = (int) TypedValue.applyDimension(
-                    TypedValue.COMPLEX_UNIT_DIP, 3, context.getResources().getDisplayMetrics());
-            params.width = (allWidth - space) / 4;
-            img[i].setLayoutParams(params);
+    private int getNearestTitlePosition(int position) {
+        if (data.get(position).getType() == Item.ITEM_TITLE) {
+            return position;
         }
-
+        int i = 0, j = title.size() - 1;
+        while (i < j) {
+            int mid = (i + j + 1) >> 1;
+            if (title.get(mid) < position) {
+                i = mid;
+            } else {
+                j = mid - 1;
+            }
+        }
+        return title.get(i);
     }
-}
 }

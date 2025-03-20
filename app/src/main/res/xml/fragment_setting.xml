@@ -28,6 +28,9 @@
     <Preference
         android:key="force_reset_compressed"
         android:title="清空所有压缩文件" />
+    <Preference
+        android:key="force_reset_glide"
+        android:title="清空Glide缓存" />
 
 
 </androidx.preference.PreferenceScreen>

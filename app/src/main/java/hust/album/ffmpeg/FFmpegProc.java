@@ -2,7 +2,9 @@ package hust.album.ffmpeg;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
+import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
 import android.util.Size;
@@ -25,14 +27,15 @@ import hust.album.entity.Image;
 import hust.album.view.Global;
 
 public class FFmpegProc {
+    Context context;
     private String codec;
     private int qp;
-    Context context;
 
     private FFmpegProc() {
         this.codec = "libx265";
         this.qp = 22;
     }
+
     public FFmpegProc(Context context) {
         this();
         this.context = context;
@@ -45,7 +48,7 @@ public class FFmpegProc {
 //        创建 list.txt，存放压缩的图片序列
         File listFile = new File(context.getExternalFilesDir(null), "list.txt");
         try {
-            BufferedWriter writer =  new BufferedWriter(new FileWriter(listFile, false));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(listFile, false));
             for (int i : images) {
                 String path = Global.getInstance().getImagesByPos(i).getAbsolutePath();
                 writer.write(String.format("file '%s'\n", path));
@@ -61,16 +64,23 @@ public class FFmpegProc {
 
         int frame = 0;
         for (int i : images) {
-            Image image= Global.getInstance().getImagesByPos(i);
+            Image image = Global.getInstance().getImagesByPos(i);
 
             try {
-                Bitmap bm = ThumbnailUtils.createImageThumbnail(new File(image.getAbsolutePath()), new Size(1280, 720), null);
-                File thumbnailPath = new File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES),  image.getName());
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inJustDecodeBounds = true;
+                BitmapFactory.decodeFile(image.getAbsolutePath(), options);
+                int w = options.outWidth;
+                int h = options.outHeight;
+                String thumbnailPath = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/" + "thumbnail" + image.getName();
                 FileOutputStream fos = new FileOutputStream(thumbnailPath);
-                bm.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                context.getContentResolver()
+                        .loadThumbnail(Uri.parse(image.getUri()), new Size(w / 10, h / 10), null)
+                        .compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                fos.close();
 
                 image.setCompressed(true);
-                image.setThumbnailPath(thumbnailPath.getAbsolutePath());
+                image.setThumbnailPath(thumbnailPath);
                 image.setFramePos(frame++);
                 image.setVideoPath(outputPath);
             } catch (IOException e) {
@@ -79,7 +89,7 @@ public class FFmpegProc {
 
         }
 
-        String cmd = String.format(Locale.getDefault(),"-f concat -safe 0 -i %s -pix_fmt yuvj422p -c:v %s -bf 0 -x265-params qp=%d -y %s", listPath, codec, qp, outputPath);
+        String cmd = String.format(Locale.getDefault(), "-f concat -safe 0 -i %s -pix_fmt yuvj422p -c:v %s -bf 0 -x265-params qp=%d -y %s", listPath, codec, qp, outputPath);
         FFmpegKit.executeAsync(cmd, session -> {
             if (!ReturnCode.isSuccess(session.getReturnCode())) {
                 Log.e("FFmpegProc", "compressAlbum: failed with state %s" + session.getState());
@@ -88,16 +98,6 @@ public class FFmpegProc {
             }
         });
 
-    }
-
-    /**
-     * 根据时间生成文件名
-     * @return .mp4 文件名
-     */
-    private String generateFileName() {
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault());
-        String prefix = df.format(new Date());
-        return "VID_" + prefix + ".mp4";
     }
 
     public void extractPhoto(Image image, FFmpegHandler handler) {
@@ -117,5 +117,16 @@ public class FFmpegProc {
                 handler.handle(outputPath);
             }
         });
+    }
+
+    /**
+     * 根据时间生成文件名
+     *
+     * @return .mp4 文件名
+     */
+    private String generateFileName() {
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault());
+        String prefix = df.format(new Date());
+        return "VID_" + prefix + ".mp4";
     }
 }
