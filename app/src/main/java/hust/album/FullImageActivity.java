@@ -1,8 +1,15 @@
 package hust.album;
 
+import android.content.ContentValues;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,6 +21,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 
+import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -71,6 +79,8 @@ public class FullImageActivity extends AppCompatActivity {
 
         FFmpegProc ffmpegProc = new FFmpegProc(this);
 
+        Context ctx = this;
+
         // 添加回调监听滑动状态
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
@@ -89,10 +99,27 @@ public class FullImageActivity extends AppCompatActivity {
                 downloadButton.setOnClickListener(v -> {
                      ffmpegProc.extractPhoto(image, new FFmpegHandler() {
                         @Override
-                        protected void handle() {
-                            handler.post(() -> {
-                                Toast.makeText(FullImageActivity.this, "图片已保存", Toast.LENGTH_SHORT).show();
-                            });
+                        protected void handle(String msg) {
+                            ContentValues contentValues = new ContentValues();
+                            contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, "ALB" + image.getName());
+                            contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                            contentValues.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
+
+                            Uri uri = ctx.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+
+                            if (uri != null) {
+                                try {
+                                    try (OutputStream out = ctx.getContentResolver().openOutputStream(uri)) {
+                                        BitmapFactory.decodeFile(msg).compress(Bitmap.CompressFormat.JPEG, 100, out);
+                                        handler.post(() -> {
+                                            Toast.makeText(ctx, "图片已保存到相册", Toast.LENGTH_SHORT).show();
+                                        });
+                                    }
+                                } catch (Exception e) {
+                                    Log.e("Album", "保存失败： ", e);
+                                }
+                            }
+
                         }
                     });
                 });

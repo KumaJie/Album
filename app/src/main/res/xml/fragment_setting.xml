@@ -22,5 +22,12 @@
         android:key="similarity_threshold"
         android:title="搜索阈值"
         android:defaultValue="0.9" />
+    <Preference
+        android:key="force_reset_cache"
+        android:title="清空所有缓存文件" />
+    <Preference
+        android:key="force_reset_compressed"
+        android:title="清空所有压缩文件" />
+
 
 </androidx.preference.PreferenceScreen>

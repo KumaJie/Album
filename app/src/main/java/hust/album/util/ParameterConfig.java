@@ -15,7 +15,6 @@ public class ParameterConfig {
 
     public static float SIMILARITY_THRESHOLD;
 
-
     public static void getDefaults(Context context) {
         FORCE_CREATE_ALBUM = PreferenceManager.getDefaultSharedPreferences(context).getBoolean("force_create_album", false);
         FORCE_EXTRACT_EXIF = PreferenceManager.getDefaultSharedPreferences(context).getBoolean("force_extract_exif", false);

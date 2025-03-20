@@ -10,7 +10,10 @@ import android.window.OnBackInvokedDispatcher;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+
+import java.io.File;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 
@@ -18,6 +21,33 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.fragment_setting, rootKey);
+
+        Preference resetCacheButton = findPreference("force_reset_cache");
+        if (resetCacheButton != null) {
+            resetCacheButton.setOnPreferenceClickListener(preference -> {
+                File cacheDir = requireContext().getExternalCacheDir();
+                if (deleteDirectory(cacheDir)) {
+                    Toast.makeText(requireContext(), "缓存已被清理", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "缓存清理失败", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            });
+        }
+
+        Preference resetCompressedButton = findPreference("force_reset_compressed");
+        if (resetCompressedButton != null) {
+            resetCompressedButton.setOnPreferenceClickListener(preference -> {
+                File compressedDir = requireContext().getExternalFilesDir(null);
+                if (deleteDirectory(compressedDir)) {
+                    Toast.makeText(requireContext(), "压缩文件已被清理", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "压缩文件清理失败", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            });
+        }
+
     }
 
     @Override
@@ -37,4 +67,33 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         requireActivity().getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(
                 backInvokedCallback);
     }
+
+
+    public static boolean deleteDirectory(File directory) {
+        if (directory == null || !directory.exists()) {
+            return false;
+        }
+
+        if (!directory.isDirectory()) {
+            return false;
+        }
+
+        // 获取目录中的所有文件和子目录
+        File[] files = directory.listFiles();
+        if (files != null) { // 如果目录非空
+            for (File file : files) {
+                if (file.isFile()) {
+                    // 如果是文件，直接删除
+                    file.delete();
+                } else if (file.isDirectory()) {
+                    // 如果是子目录，递归删除
+                    deleteDirectory(file);
+                }
+            }
+        }
+
+        // 删除空目录
+        return directory.delete();
+    }
+
 }

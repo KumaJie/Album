@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
 
-    private SharedPreferences.OnSharedPreferenceChangeListener listener = (sharedPreferences, key) -> {
+    private final SharedPreferences.OnSharedPreferenceChangeListener listener = (sharedPreferences, key) -> {
         switch (key) {
             case "force_create_album":
                 ParameterConfig.FORCE_CREATE_ALBUM = sharedPreferences.getBoolean("force_create_album", ParameterConfig.FORCE_CREATE_ALBUM);
@@ -155,8 +155,8 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progress_bar);
 
         container = findViewById(R.id.settings_container);
-        initConfig();
 
+        initConfig();
         if (ParameterConfig.FORCE_CREATE_ALBUM || !readStatus()) {
             getAlbumPhotos(this);
         }

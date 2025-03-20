@@ -86,7 +86,7 @@ public class RAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                         FFmpegProc ffmpegProc = new FFmpegProc(context);
                         ffmpegProc.compressAlbum(item.getImages(), new FFmpegHandler() {
                             @Override
-                            protected void handle() {
+                            protected void handle(String msg) {
                                 new Handler(Looper.getMainLooper()).post(() -> {
                                     titleViewHolder.button.setProgress(100);
                                 });

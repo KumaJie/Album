@@ -8,7 +8,6 @@ import android.util.Log;
 import android.util.Size;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
-import com.arthenica.ffmpegkit.FFmpegSession;
 import com.arthenica.ffmpegkit.ReturnCode;
 
 import java.io.BufferedWriter;
@@ -85,7 +84,7 @@ public class FFmpegProc {
             if (!ReturnCode.isSuccess(session.getReturnCode())) {
                 Log.e("FFmpegProc", "compressAlbum: failed with state %s" + session.getState());
             } else {
-                handler.handle();
+                handler.handle(null);
             }
         });
 
@@ -115,9 +114,8 @@ public class FFmpegProc {
             if (!ReturnCode.isSuccess(session.getReturnCode())) {
                 Log.e("FFmpegProc", "extractPhote: failed with state %s" + session.getState());
             } else {
-                handler.handle();
+                handler.handle(outputPath);
             }
         });
-
     }
 }
