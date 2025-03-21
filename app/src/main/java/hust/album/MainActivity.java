@@ -37,6 +37,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
@@ -305,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
         long start = System.currentTimeMillis();
         Map<String, List<Integer>> mp = new HashMap<>();
         List<Image> images = Global.getInstance().getImages();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日");
         for (int i = 0; i < images.size(); i++) {
             String date = images.get(i).getDate(formatter);
             if (!mp.containsKey(date)) {

@@ -86,7 +86,7 @@ public class FullImageActivity extends AppCompatActivity {
                 tb.setTitle(image.getName());
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                 tb.setSubtitle(image.getDate(formatter));
-                tv.setText(image.toString());
+                tv.setText(image.fmtGPSInfo());
 
                 actionsMenu.setEnabled(image.isCompressed());
 

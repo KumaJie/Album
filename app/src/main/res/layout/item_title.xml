@@ -1,28 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="60dp"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:gravity="center_horizontal">
 
         <TextView
             android:id="@+id/item_title_textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="20sp"
             android:layout_marginLeft="10dp"
             android:layout_weight="3"
+            android:layout_gravity="center_vertical"
+            android:textColor="@color/black"
+            android:textSize="20sp"
              />
 
         <com.dd.CircularProgressButton
             android:id="@+id/item_title_button"
             android:layout_width="100dp"
             android:layout_height="50dp"
+            android:layout_gravity="center_vertical"
             android:textColor="@color/white"
             android:textSize="18sp"
             app:cpb_textComplete="@string/complete"
             app:cpb_textIdle="@string/dedup"
             app:cpb_cornerRadius="48dp"
-            app:cpb_iconComplete="@drawable/ic_launcher_foreground"
              />
 </LinearLayout>
