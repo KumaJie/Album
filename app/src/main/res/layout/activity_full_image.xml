@@ -25,6 +25,7 @@
 
         <TextView
             android:id="@+id/detail"
+            android:visibility="visible"
             android:textColor="@color/black"
             android:textSize="20sp"
             android:layout_width="match_parent"

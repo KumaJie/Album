@@ -42,7 +42,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     @Override
     public void onBindViewHolder(ImageViewHolder holder, int position) {
         Image image = images.get(position);
-        if (image.isCompressed()) {
+        if (false && image.isCompressed()) {
             Glide.with(context).load(image.getThumbnailPath()).into(holder.imageView);
         } else {
             Glide.with(context).load(image.getUri()).into(holder.imageView);

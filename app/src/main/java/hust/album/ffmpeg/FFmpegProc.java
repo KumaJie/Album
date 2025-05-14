@@ -10,6 +10,7 @@ import android.util.Log;
 import android.util.Size;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
+import com.arthenica.ffmpegkit.FFmpegSession;
 import com.arthenica.ffmpegkit.ReturnCode;
 
 import java.io.BufferedWriter;
@@ -33,12 +34,33 @@ public class FFmpegProc {
 
     private FFmpegProc() {
         this.codec = "libx265";
-        this.qp = 22;
+        this.qp = 32;
     }
 
     public FFmpegProc(Context context) {
         this();
         this.context = context;
+    }
+
+    public void test(int i, FFmpegHandler handler) {
+        String path = context.getExternalFilesDir("save").getAbsolutePath();
+        String[] pix = {"600", "1080", "1440", "4000"};
+
+        String p = pix[i];
+            String outputPath = path + "/test_" + p + ".mp4";
+            String cmd = String.format(Locale.getDefault(),
+                    "-i %s/%s_%%d.jpg -pix_fmt yuvj422p -c:v %s -bf 0 -x265-params qp=%d -y %s",
+                    path, p, codec, qp, outputPath);
+            handler.timeOn();
+            FFmpegKit.executeAsync(cmd, session -> {
+                if (!ReturnCode.isSuccess(session.getReturnCode())) {
+                    Log.e("FFmpegProc", "compressAlbum: failed with state %s" + session.getState());
+                } else {
+                    Log.d("FFmpegProc", "compressAlbum spend : " + handler.timeEnd() + "ms");
+                    handler.handle(null);
+                }
+            });
+
     }
 
     public void compressAlbum(List<Integer> images, FFmpegHandler handler) {
@@ -75,7 +97,7 @@ public class FFmpegProc {
                 String thumbnailPath = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/" + "thumbnail" + image.getName();
                 FileOutputStream fos = new FileOutputStream(thumbnailPath);
                 context.getContentResolver()
-                        .loadThumbnail(Uri.parse(image.getUri()), new Size(w / 10, h / 10), null)
+                        .loadThumbnail(Uri.parse(image.getUri()), new Size(w / 2, h / 2), null)
                         .compress(Bitmap.CompressFormat.JPEG, 100, fos);
                 fos.close();
 
@@ -88,12 +110,14 @@ public class FFmpegProc {
             }
 
         }
-
+        Log.d("FFmpegProc", "compressAlbum num: " + images.size());
         String cmd = String.format(Locale.getDefault(), "-f concat -safe 0 -i %s -pix_fmt yuvj422p -c:v %s -bf 0 -x265-params qp=%d -y %s", listPath, codec, qp, outputPath);
+        handler.timeOn();
         FFmpegKit.executeAsync(cmd, session -> {
             if (!ReturnCode.isSuccess(session.getReturnCode())) {
                 Log.e("FFmpegProc", "compressAlbum: failed with state %s" + session.getState());
             } else {
+                Log.d("FFmpegProc", "compressAlbum spend : " + handler.timeEnd() + "ms");
                 handler.handle(null);
             }
         });

@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,11 +38,13 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.features2d.SIFT;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,6 +64,8 @@ import hust.album.dbscan.DBSCANClusterer;
 import hust.album.dbscan.metric.DistanceMetricImage;
 import hust.album.entity.Image;
 import hust.album.entity.Item;
+import hust.album.ffmpeg.FFmpegHandler;
+import hust.album.ffmpeg.FFmpegProc;
 import hust.album.jni.FeatureExtractor;
 import hust.album.jni.Index;
 import hust.album.util.ParameterConfig;
@@ -171,6 +176,83 @@ public class MainActivity extends AppCompatActivity {
                     .commit();
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             return true;
+        } else if (item.getItemId() == R.id.test) {
+//            FFmpegProc proc = new FFmpegProc(this);
+//            proc.test(3, new FFmpegHandler() {
+//                @Override
+//                protected void handle(String msg) {
+//                    Log.d("FFmpegProc", "compressAlbum spend : " + timeEnd() + "ms");
+//                }
+//            });
+            List<Image> images = Global.getInstance().getImages();
+
+            long start = 0;
+            String root = getExternalFilesDir("save").getAbsolutePath();
+//            String[] pix = {"600", "1080", "1440", "4000"};
+//            for (String p : pix) {
+//                String path = root + "/" + p + "_1.jpg";
+//                start = System.currentTimeMillis();
+//                Bitmap bitmap = BitmapFactory.decodeFile(path);
+//                Log.d("Album", "decode fullimage spend " + (System.currentTimeMillis() - start) + " ms height " + bitmap.getHeight() + " width " + bitmap.getWidth());
+//                phash(bitmap);
+//            }
+            String[] type = {"xiaomi", "iphone", "iqoo"};
+            for (String t : type) {
+                String path = root + "/" + t + ".jpg";
+                start = System.currentTimeMillis();
+                Bitmap bitmap = BitmapFactory.decodeFile(path);
+                Log.d("Album", "decode fullimage spend " + (System.currentTimeMillis() - start) + " ms height " + bitmap.getHeight() + " width " + bitmap.getWidth());
+//                phash(bitmap);
+            }
+            for (String t : type) {
+                String path = root + "/" + t + ".jpg";
+                ExifInterface exifInterface = null;
+                try {
+                    exifInterface = new ExifInterface(path);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                start = System.nanoTime();
+                Bitmap thumbnailBitmap = exifInterface.getThumbnailBitmap();
+                if (thumbnailBitmap != null) {
+                    Log.d("Album", "decode thumimage spend " + (System.nanoTime() - start) + " ns height " + thumbnailBitmap.getHeight() + " width " + thumbnailBitmap.getWidth());
+                }
+            }
+
+
+//            try {
+//                for (int i = 0; i < 10; i++) {
+//                    start = System.currentTimeMillis();
+//                    Bitmap bitmap = BitmapFactory.decodeFile(images.get(i).getAbsolutePath());
+//
+//                    Log.d("Album", "decode fullimage spend " + (System.currentTimeMillis() - start) + " ms height " + bitmap.getHeight() + " width " + bitmap.getWidth());
+//                }
+//                start = System.currentTimeMillis();
+//                for (int i = 0; i < 2000; i++) {
+//                    ExifInterface exifInterface = new ExifInterface(images.get(i).getAbsolutePath());
+//                    Bitmap thumbnailBitmap = exifInterface.getThumbnailBitmap();
+//                    if (thumbnailBitmap != null) {
+//                        phash(thumbnailBitmap);
+//                    } else {
+//                        Log.d("Album", "getThumbnailBitmap: " + images.get(i).getName() + " thumbnail is null");
+//                    }
+//                }
+//                Log.d("Album", "getThumbnailBitmap spend " + (System.currentTimeMillis() - start) + " ms");
+//                start = System.currentTimeMillis();
+//                for (int i = 800; i < 900; i++) {
+//                    is = getContentResolver().openInputStream(Uri.parse(images.get(i).getUri()));
+//                    ExifInterface exifInterface = new ExifInterface(is);
+//                    Bitmap thumbnailBitmap = exifInterface.getThumbnailBitmap();
+//                    phash(thumbnailBitmap);
+//                    is.close();
+//                }
+//                Log.d("Album", "stream getThumbnailBitmap spend " + (System.currentTimeMillis() - start) + " ms");
+
+
+//            } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//            }
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -198,6 +280,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void getAlbumPhotos() {
+        Global.getInstance().getImages().clear();
         Uri collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         String[] projection = new String[]{
                 MediaStore.Images.Media._ID,
@@ -233,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        Log.d("getAlbumPhotos", "spend " + (System.currentTimeMillis() - start) + " ms");
+        Log.d("Album", "getAlbumPhotos num: "+ Global.getInstance().getSize() +" spend: " + (System.currentTimeMillis() - start) + " ms");
     }
 
     public void sortByDBSCAN() {
@@ -274,6 +357,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void sortByFeature() {
         if (ParameterConfig.FORCE_EXTRACT_FEATURES || (featrues.isEmpty() && !readFeatures())) {
+            featrues.clear();
             getFeature();
             saveFeatures();
         }
@@ -283,6 +367,7 @@ public class MainActivity extends AppCompatActivity {
         Index index = new Index(getExternalCacheDir().getAbsolutePath(), ParameterConfig.FORCE_TRAIN_INDEX);
         index.init();
         List<List<Integer>> ret = index.match(featrues, d, ParameterConfig.SIMILARITY_THRESHOLD);
+        Log.d("Album", "match result: " + ret.size());
         if (ret == null) {
             return;
         }
@@ -370,19 +455,28 @@ public class MainActivity extends AppCompatActivity {
         });
         long start = System.currentTimeMillis();
         List<Image> images = Global.getInstance().getImages();
+//        long sum = 0;
         for (int i = 0; i < images.size(); i++) {
             Image image = images.get(i);
             try {
-                InputStream is = getContentResolver().openInputStream(Uri.parse(image.getUri()));
-                if (is != null) {
-                    ExifInterface exifInterface = new ExifInterface(is);
-                    Bitmap thumbnail = exifInterface.getThumbnailBitmap();
-                    if (thumbnail != null) {
-                        float[] feature = fe.ExtractFeature(thumbnail);
-                        featrues.add(feature);
-                    }
-                    is.close();
+//                long tmp = System.currentTimeMillis();
+                ExifInterface exifInterface = new ExifInterface(image.getAbsolutePath());
+                Bitmap thumbnail = exifInterface.getThumbnailBitmap();
+//                sum += System.currentTimeMillis() - tmp;
+                if (thumbnail != null) {
+                    float[] feature = fe.ExtractFeature(thumbnail);
+                    featrues.add(feature);
+//                } else {
+//                    Log.d("Album", "getFeature: "+image.getName()+" thumbnail is null");
+//                    long tmp = System.currentTimeMillis();
+//                    Bitmap bm = getContentResolver().loadThumbnail(Uri.parse(image.getUri()), new android.util.Size(224, 224), null);
+//                    Bitmap bm = BitmapFactory.decodeFile(image.getAbsolutePath());
+//                    sum += System.currentTimeMillis() - tmp;
+
+//                    float[] feature = fe.ExtractFeature(bm);
+//                    featrues.add(feature);
                 }
+
             } catch (Exception e) {
                 Log.e("getFeature", e.getMessage());
             }
@@ -391,7 +485,7 @@ public class MainActivity extends AppCompatActivity {
         }
         handler.post(() -> progressBar.setVisibility(View.GONE));
 
-        Log.d("getFeature", "spend " + (System.currentTimeMillis() - start) + " ms");
+//        Log.d("Album", "getFeature spend " + (System.currentTimeMillis() - start) + " ms image spend " + sum + " ms");
     }
 
     private void getGPSInfo() {
@@ -408,30 +502,28 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < images.size(); i++) {
             Image image = images.get(i);
             try {
-                InputStream is = getContentResolver().openInputStream(Uri.parse(image.getUri()));
-                if (is != null) {
-                    ExifInterface exifInterface = new ExifInterface(is);
-                    double[] latlong = exifInterface.getLatLong();
-                    if (latlong != null) {
-                        image.setLatitude(latlong[0]);
-                        image.setLongitude(latlong[1]);
-                    }
-
-                    Bitmap thumbnail = exifInterface.getThumbnailBitmap();
-                    if (thumbnail != null) {
-                        image.setPhash(phash(thumbnail));
-                    }
-                    is.close();
+                ExifInterface  exifInterface = new ExifInterface(image.getAbsolutePath());
+                double[] latlong = exifInterface.getLatLong();
+                if (latlong != null) {
+                    image.setLatitude(latlong[0]);
+                    image.setLongitude(latlong[1]);
                 }
-            } catch (Exception e) {
-                Log.e("EXIF", e.getMessage());
+
+                Bitmap thumbnail = exifInterface.getThumbnailBitmap();
+                if (thumbnail != null) {
+                    image.setPhash(phash(thumbnail));
+                } else {
+                    Log.d("Album", "getGPSInfo: "+image.getName()+" thumbnail is null");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
             int finalI = i;
             handler.post(() -> progressBar.setProgress((float) finalI / images.size() * 100));
         }
         handler.post(() -> progressBar.setVisibility(View.GONE));
         Global.getInstance().setGPSInfo(true);
-        Log.d("getGPSInfo", "spend " + (System.currentTimeMillis() - start) + " ms");
+        Log.d("Album", "getGPSInfo spend " + (System.currentTimeMillis() - start) + " ms");
     }
 
     private void initConfig() {
@@ -444,10 +536,12 @@ public class MainActivity extends AppCompatActivity {
         // 预处理
         Mat image = new Mat();
         Utils.bitmapToMat(bm, image);
+        long start = System.currentTimeMillis();
         Imgproc.cvtColor(image, image, Imgproc.COLOR_RGBA2GRAY);
         Imgproc.resize(image, image, new Size(32, 32));
         image.convertTo(image, CvType.CV_32F);
-
+        Log.d("Album", "phash pre-processing spend " + (System.currentTimeMillis() - start) + " ms");
+        start  = System.currentTimeMillis();
         Mat dctMat = new Mat();
         Core.dct(image, dctMat);
         Mat part = dctMat.rowRange(1, 9).colRange(1, 9);
@@ -460,6 +554,7 @@ public class MainActivity extends AppCompatActivity {
                 shift--;
             }
         }
+        Log.d("Album", "phash spend " + (System.currentTimeMillis() - start) + " ms");
         return phash;
     }
 
@@ -518,7 +613,7 @@ public class MainActivity extends AppCompatActivity {
             long start = System.currentTimeMillis();
             ObjectOutputStream oo = new ObjectOutputStream(new FileOutputStream(statusFile, false));
             oo.writeObject(featrues);
-            Log.d("Album", "save features success: " + (System.currentTimeMillis() - start) + " ms");
+            Log.d("Album", "save features success: features number: " + featrues.size() + " time: " + (System.currentTimeMillis() - start) + " ms");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
