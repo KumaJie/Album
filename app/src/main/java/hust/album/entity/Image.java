@@ -54,7 +54,7 @@ public class Image implements Serializable {
 
     public String fmtGPSInfo() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm:ss");
-        return "时间："+ getDate(formatter) + "\n纬度：" + latitude + "\n经度：" + longitude + "\n感知哈希：" + Long.toHexString(phash);
+        return "时间："+ getDate(formatter) + "\n纬度：" + latitude + "\n经度：" + longitude;
     }
 
 

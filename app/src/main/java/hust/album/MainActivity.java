@@ -303,6 +303,7 @@ public class MainActivity extends AppCompatActivity {
                 while (cursor.moveToNext()) {
                     long id = cursor.getLong(idColumn);
                     String name = cursor.getString(nameColumn);
+                    if (name.startsWith("Screenshot")) continue;
                     long time = cursor.getLong(dateColumn);
 
                     Uri contentUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
@@ -326,7 +327,7 @@ public class MainActivity extends AppCompatActivity {
         List<ArrayList<Integer>> res = new ArrayList<>();
 
         try {
-            DBSCANClusterer<Image> clusterer = new DBSCANClusterer<>(Global.getInstance().getImages(), 2, 200, new DistanceMetricImage());
+            DBSCANClusterer<Image> clusterer = new DBSCANClusterer<>(Global.getInstance().getImages(), 2, 50, new DistanceMetricImage());
             long s = System.currentTimeMillis();
             res = clusterer.performClustering();
             long elapse = System.currentTimeMillis() - s;
@@ -466,15 +467,15 @@ public class MainActivity extends AppCompatActivity {
                 if (thumbnail != null) {
                     float[] feature = fe.ExtractFeature(thumbnail);
                     featrues.add(feature);
-//                } else {
-//                    Log.d("Album", "getFeature: "+image.getName()+" thumbnail is null");
-//                    long tmp = System.currentTimeMillis();
+                } else {
+                    Log.d("Album", "getFeature: "+image.getName()+" thumbnail is null");
+                    long tmp = System.currentTimeMillis();
 //                    Bitmap bm = getContentResolver().loadThumbnail(Uri.parse(image.getUri()), new android.util.Size(224, 224), null);
-//                    Bitmap bm = BitmapFactory.decodeFile(image.getAbsolutePath());
+                    Bitmap bm = BitmapFactory.decodeFile(image.getAbsolutePath());
 //                    sum += System.currentTimeMillis() - tmp;
 
-//                    float[] feature = fe.ExtractFeature(bm);
-//                    featrues.add(feature);
+                    float[] feature = fe.ExtractFeature(bm);
+                    featrues.add(feature);
                 }
 
             } catch (Exception e) {
@@ -507,14 +508,16 @@ public class MainActivity extends AppCompatActivity {
                 if (latlong != null) {
                     image.setLatitude(latlong[0]);
                     image.setLongitude(latlong[1]);
+                } else {
+                    Log.d("Album", "getGPSInfo: "+image.getName()+" latlong is null");
                 }
 
-                Bitmap thumbnail = exifInterface.getThumbnailBitmap();
-                if (thumbnail != null) {
-                    image.setPhash(phash(thumbnail));
-                } else {
-                    Log.d("Album", "getGPSInfo: "+image.getName()+" thumbnail is null");
-                }
+//                Bitmap thumbnail = exifInterface.getThumbnailBitmap();
+//                if (thumbnail != null) {
+//                    image.setPhash(phash(thumbnail));
+//                } else {
+//                    Log.d("Album", "getGPSInfo: "+image.getName()+" thumbnail is null");
+//                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

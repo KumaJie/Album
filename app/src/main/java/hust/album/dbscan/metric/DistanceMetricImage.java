@@ -71,21 +71,21 @@ public class DistanceMetricImage implements DistanceMetric<Image> {
 
     @Override
     public double calculateDistance(Image image1, Image image2) {
-        if (image1.getPhash() == 0 || image2.getPhash() == 0) {
-            return Double.MAX_VALUE;
-        }
-        if (hammingDistance(image1.getPhash(), image2.getPhash()) > 15) {
-            return Double.MAX_VALUE;
-        }
+//        if (image1.getPhash() == 0 || image2.getPhash() == 0) {
+//            return Double.MAX_VALUE;
+//        }
+//        if (hammingDistance(image1.getPhash(), image2.getPhash()) > 15) {
+//            return Double.MAX_VALUE;
+//        }
         if (image1.getLatitude() == 0 || image1.getLongitude() == 0) {
             return Double.MAX_VALUE;
         }
         if (image2.getLatitude() == 0 || image2.getLongitude() == 0) {
             return Double.MAX_VALUE;
         }
-        if (timeDistance(image1.getDate(), image2.getDate()) < 1) {
-            return 0;
-        }
+//        if (timeDistance(image1.getDate(), image2.getDate()) < 1) {
+//            return 0;
+//        }
         return gpsDistance(image1.getLatitude(), image1.getLongitude(), image2.getLatitude(), image2.getLongitude());
     }
 }
