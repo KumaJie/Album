@@ -37,6 +37,8 @@ public class FullImageActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private List<Image> images;
     private int pos;
+//    是否为聚类模式
+    private boolean clustered;
     private TextView tv;
     private FloatingActionsMenu actionsMenu;
     private FloatingActionButton downloadButton;
@@ -59,7 +61,7 @@ public class FullImageActivity extends AppCompatActivity {
 
         pos = getIntent().getIntExtra("position", 0);
         List<Integer> mask = (List<Integer>) getIntent().getSerializableExtra("images");
-
+        clustered = getIntent().getBooleanExtra("clustered", false);
         images = new ArrayList<>();
 
         for (int m : mask) {
@@ -86,7 +88,9 @@ public class FullImageActivity extends AppCompatActivity {
                 tb.setTitle(image.getName());
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                 tb.setSubtitle(image.getDate(formatter));
-                tv.setText(image.fmtGPSInfo());
+                if (clustered) {
+                    tv.setText(image.fmtGPSInfo());
+                }
 
                 actionsMenu.setEnabled(image.isCompressed());
 

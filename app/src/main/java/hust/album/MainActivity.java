@@ -303,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
                 while (cursor.moveToNext()) {
                     long id = cursor.getLong(idColumn);
                     String name = cursor.getString(nameColumn);
-                    if (name.startsWith("Screenshot")) continue;
+                    if (name.startsWith("Screenshot") || name.startsWith("ALB")) continue;
                     long time = cursor.getLong(dateColumn);
 
                     Uri contentUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
@@ -342,7 +342,7 @@ public class MainActivity extends AppCompatActivity {
             if (cluster.size() < 2) {
                 continue;
             }
-            items.add(new Item(Item.ITEM_TITLE, getString(R.string.item_name), cluster));
+            items.add(new Item(Item.ITEM_TITLE, getString(R.string.cluster_item_name), cluster));
 
             for (int i = 0; i < cluster.size(); i += 4) {
                 if (i + 4 <= cluster.size()) {
@@ -469,9 +469,12 @@ public class MainActivity extends AppCompatActivity {
                     featrues.add(feature);
                 } else {
                     Log.d("Album", "getFeature: "+image.getName()+" thumbnail is null");
-                    long tmp = System.currentTimeMillis();
-//                    Bitmap bm = getContentResolver().loadThumbnail(Uri.parse(image.getUri()), new android.util.Size(224, 224), null);
-                    Bitmap bm = BitmapFactory.decodeFile(image.getAbsolutePath());
+//                    long tmp = System.currentTimeMillis();
+                    int width = exifInterface.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
+                    int height = exifInterface.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, -1);
+
+                    Bitmap bm = getContentResolver().loadThumbnail(Uri.parse(image.getUri()), new android.util.Size(width / 10, height / 10), null);
+//                    Bitmap bm = BitmapFactory.decodeFile(image.getAbsolutePath());
 //                    sum += System.currentTimeMillis() - tmp;
 
                     float[] feature = fe.ExtractFeature(bm);

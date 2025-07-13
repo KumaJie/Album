@@ -1,10 +1,11 @@
 <resources>
-    <string name="app_name">Album</string>
-    <string name="item_name">相似图片</string>
+    <string name="app_name">相似图像集压缩系统</string>
+    <string name="cluster_item_name">时空相关性较高的图像集</string>
+    <string name="item_name">相似图像集</string>
     <string name="origin">原始</string>
-    <string name="space_time">快速检测</string>
-    <string name="deep">深度检测</string>
+    <string name="space_time">时空信息聚类</string>
+    <string name="deep">相似图像集检测</string>
     <string name="settings">设置</string>
-    <string name="dedup">去重</string>
+    <string name="dedup">压缩</string>
     <string name="complete">完成</string>
 </resources>

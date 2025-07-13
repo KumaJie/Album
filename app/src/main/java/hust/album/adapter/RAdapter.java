@@ -129,6 +129,7 @@ public class RAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                             Log.d("RAdapter", "titlePosition: " + titlePosition + " imagePosition: " + imagePosition);
                             intent.putExtra("images", new ArrayList<>(data.get(titlePosition).getImages()));
                             intent.putExtra("position", imagePosition);
+                            intent.putExtra("clustered", data.get(titlePosition).getTitle().equals(context.getString(R.string.cluster_item_name)));
                             context.startActivity(intent);
                         });
                         Image image = Global.getInstance().getImagesByPos(item.getImageByPos(i));
